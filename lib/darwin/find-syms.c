@@ -407,7 +407,7 @@ static void inspect_dyld() {
                              "__ZNK20ImageLoaderMegaDylib8getSlideEv",
                              "__ZNK20ImageLoaderMegaDylib20getIndexedMachHeaderEj",
                              "__ZNK5dyld311MachOLoaded8getSlideEv",
-                             "__ZNK5dyld46Loader11loadAddressERNS_12RuntimeStateE",
+                             "__ZNK5dyld46Loader11loadAddressERKNS_12RuntimeStateE",
     };
     void *syms[8];
     intptr_t dyld_slide = -1;
