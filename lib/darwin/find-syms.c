@@ -464,36 +464,44 @@ struct substitute_image *substitute_open_image(const char *filename) {
     }
 
     void* image;
-    if (isUsingDyld4) {
-        image = dyld4_Loader_loadAddress((const void *)((uint64_t)dlhandle>>1), *dyld4_runtimeState_addr);
-    } else if (isUsingDyld3) {
-        image = (void*)((((uintptr_t)dlhandle) & (-2)) << 5);
-    } else {
-        image = (void*)(((uintptr_t)dlhandle) & (-4));
-    }
+    // if (isUsingDyld4) {
+    //     image = dyld4_Loader_loadAddress((const void *)((uint64_t)dlhandle>>1), *dyld4_runtimeState_addr);
+    // } else if (isUsingDyld3) {
+    //     image = (void*)((((uintptr_t)dlhandle) & (-2)) << 5);
+    // } else {
+    //     image = (void*)(((uintptr_t)dlhandle) & (-4));
+    // }
     unsigned index;
     uint8_t mode;
     const void *image_header = NULL;
     intptr_t slide;
-    if (dyld3_MachOLoaded_getSlide != NULL && (isUsingDyld3 || isUsingDyld4)) {
-        uint32_t magic = *((uint32_t *)image);
-        if ((magic == MH_MAGIC || magic == MH_MAGIC_64) && dyld3_MachOLoaded_getSlide != NULL){
-            image_header = (const void *)image;
-
-            slide = dyld3_MachOLoaded_getSlide(image_header);
-        } else {
-            substitute_panic("image does not have magic, not image?");
+    for(uint32_t i = 0; i < _dyld_image_count(); i++) {
+        const char *im_name = _dyld_get_image_name(i);
+        if (strstr(im_name, filename)){
+            image_header = _dyld_get_image_header(i);
+            slide = _dyld_get_image_vmaddr_slide(i);
+            break;
         }
-    } else if (ImageLoaderMegaDylib_isCacheHandle != NULL && dyld_sAllCacheImagesProxy != NULL &&
-            ImageLoaderMegaDylib_isCacheHandle(*dyld_sAllCacheImagesProxy, image, &index, &mode)) {
-        if (ImageLoaderMegaDylib_getSlide == NULL || ImageLoaderMegaDylib_getIndexedMachHeader == NULL)
-            substitute_panic("couldn't find ImageLoaderMegaDylib methods\n");
-        slide = ImageLoaderMegaDylib_getSlide(*dyld_sAllCacheImagesProxy);
-        image_header = ImageLoaderMegaDylib_getIndexedMachHeader(*dyld_sAllCacheImagesProxy, index);
-    } else {
-        image_header = ImageLoaderMachO_machHeader(image);
-        slide = ImageLoaderMachO_getSlide(image);
     }
+    // if (dyld3_MachOLoaded_getSlide != NULL && (isUsingDyld3 || isUsingDyld4)) {
+    //     uint32_t magic = *((uint32_t *)image);
+    //     if ((magic == MH_MAGIC || magic == MH_MAGIC_64) && dyld3_MachOLoaded_getSlide != NULL){
+    //         image_header = (const void *)image;
+
+    //         slide = dyld3_MachOLoaded_getSlide(image_header);
+    //     } else {
+    //         substitute_panic("image does not have magic, not image?");
+    //     }
+    // } else if (ImageLoaderMegaDylib_isCacheHandle != NULL && dyld_sAllCacheImagesProxy != NULL &&
+    //         ImageLoaderMegaDylib_isCacheHandle(*dyld_sAllCacheImagesProxy, image, &index, &mode)) {
+    //     if (ImageLoaderMegaDylib_getSlide == NULL || ImageLoaderMegaDylib_getIndexedMachHeader == NULL)
+    //         substitute_panic("couldn't find ImageLoaderMegaDylib methods\n");
+    //     slide = ImageLoaderMegaDylib_getSlide(*dyld_sAllCacheImagesProxy);
+    //     image_header = ImageLoaderMegaDylib_getIndexedMachHeader(*dyld_sAllCacheImagesProxy, index);
+    // } else {
+    //     image_header = ImageLoaderMachO_machHeader(image);
+    //     slide = ImageLoaderMachO_getSlide(image);
+    // }
 
     dlclose(dlhandle);
     if (!image_header)
